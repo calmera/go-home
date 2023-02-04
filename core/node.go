@@ -30,6 +30,7 @@ type Node struct {
 	config  NodeConfig
 	ns      *server.Server
 	nc      *nats.Conn
+	js      nats.JetStreamContext
 	Modules map[string]Module
 	wg      *sync.WaitGroup
 }
@@ -49,7 +50,6 @@ func (n *Node) Start() error {
 	if err != nil {
 		return fmt.Errorf("unable to create the embedded nats server: %w", err)
 	}
-
 	n.ns = ns
 
 	go ns.Start()
@@ -67,14 +67,20 @@ func (n *Node) Start() error {
 		n.Close()
 		return err
 	}
-
 	n.nc = nc
+
+	js, err := nc.JetStream()
+	if err != nil {
+		n.Close()
+		return fmt.Errorf("unable to initialize jetstream: %w", err)
+	}
+	n.js = js
 
 	for _, m := range n.Modules {
 		log.Info().Str("module", m.Identifier()).Msg("starting module")
 		go func(mod Module, wg *sync.WaitGroup, nc *nats.Conn) {
 			wg.Add(1)
-			err := mod.Run(nc)
+			err := mod.Run(nc, n.js)
 			if err != nil {
 				log.Err(err)
 			} else {

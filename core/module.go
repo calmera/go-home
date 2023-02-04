@@ -6,6 +6,6 @@ import (
 
 type Module interface {
 	Identifier() string
-	Run(nc *nats.Conn) error
+	Run(nc *nats.Conn, js nats.JetStreamContext) error
 	Close()
 }

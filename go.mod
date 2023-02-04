@@ -2,7 +2,10 @@ module github.com/calmera/go-home
 
 go 1.18
 
+replace github.com/calmera/go-hass-ws => ../go-hass-ws
+
 require (
+	github.com/calmera/go-hass-ws v0.0.0-20230131204011-5254c52c7109 // indirect
 	github.com/klauspost/compress v1.15.15 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.17 // indirect
@@ -18,4 +21,5 @@ require (
 	golang.org/x/crypto v0.5.0 // indirect
 	golang.org/x/sys v0.4.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
+	nhooyr.io/websocket v1.8.7 // indirect
 )

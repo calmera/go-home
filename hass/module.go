@@ -1,67 +1,62 @@
 package hass
 
 import (
-	"encoding/json"
-	"github.com/mitchellh/go-homedir"
+	go_hass_ws "github.com/calmera/go-hass-ws"
 	"github.com/nats-io/nats.go"
-	"io/ioutil"
+	"github.com/rs/zerolog/log"
+	"sync"
 )
 
-func LoadHassConfig(configFile string) ([]*HassModule, error) {
-	cf, err := homedir.Expand(configFile)
-	if err != nil {
-		return nil, err
-	}
-
-	b, err := ioutil.ReadFile(cf)
-	if err != nil {
-		return nil, err
-	}
-
-	return ParseHassModules(b)
+func NewModule(config ModuleConfig) (*Module, error) {
+	return &Module{config: config}, nil
 }
 
-func ParseHassModules(b []byte) ([]*HassModule, error) {
-	var configs []HassModuleConfig
-	if err := json.Unmarshal(b, &configs); err != nil {
-		return nil, err
-	}
+type Module struct {
+	config ModuleConfig
+	wg     sync.WaitGroup
+	nc     *nats.Conn
+	js     nats.JetStreamContext
+	hass   *go_hass_ws.HassClient
 
-	modules := make([]*HassModule, len(configs))
-	for idx, config := range configs {
-		m, err := NewModule(config)
-		if err != nil {
-			return nil, err
-		}
-
-		modules[idx] = m
-	}
-
-	return modules, nil
+	kvServices nats.KeyValue
+	kvEntities nats.KeyValue
 }
 
-func NewModule(config HassModuleConfig) (*HassModule, error) {
-	return &HassModule{config: config}, nil
-}
-
-type HassModuleConfig struct {
-	Id    string `json:"id"`
-	Url   string `json:"url"`
-	Token string `json:"token"`
-}
-
-type HassModule struct {
-	config HassModuleConfig
-}
-
-func (m *HassModule) Identifier() string {
+func (m *Module) Identifier() string {
 	return m.config.Id
 }
 
-func (m *HassModule) Run(nc *nats.Conn) error {
+func (m *Module) Run(nc *nats.Conn, js nats.JetStreamContext) error {
+	m.nc = nc
+	m.js = js
+
+	hass, err := go_hass_ws.Connect(go_hass_ws.Config{
+		Url:   m.config.Url,
+		Token: m.config.Token,
+	})
+	if err != nil {
+		panic(err)
+	}
+	defer hass.Close()
+	m.hass = hass
+
+	// -- bootstrap
+	if err := m.bootstrap(); err != nil {
+		return err
+	}
+
+	// -- start listening for events
+	if _, err := m.hass.Subscribe(func(msg go_hass_ws.HassAuthenticatedMessage) {}, m.handleEvent); err != nil {
+		return err
+	}
+
+	log.Info().Str("module", m.Identifier()).Msg("listening for HASS events")
+
+	// -- wait until our hass connection dies. might not be the best idea, but will be good for the time being
+	hass.WaitUntilAllHandled()
 	return nil
 }
 
-func (m *HassModule) Close() {
-
+func (m *Module) Close() {
+	m.wg.Done()
 }
