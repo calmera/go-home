@@ -11,16 +11,19 @@ import (
 
 type NodeConfig struct {
 	StorageDir string `json:"storage_dir"`
+	ConfigDir  string `json:"config_dir"`
 }
 
 func NewNode(cfg NodeConfig) (*Node, error) {
-	return &Node{
+	n := &Node{
 		config:  cfg,
 		ns:      nil,
 		nc:      nil,
 		Modules: map[string]Module{},
 		wg:      &sync.WaitGroup{},
-	}, nil
+	}
+
+	return n, nil
 }
 
 type Node struct {

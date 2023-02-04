@@ -1,6 +1,8 @@
 package core
 
-import "github.com/nats-io/nats.go"
+import (
+	"github.com/nats-io/nats.go"
+)
 
 type Module interface {
 	Identifier() string

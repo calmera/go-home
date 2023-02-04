@@ -1,0 +1,7 @@
+[
+  {
+    "id": "local_hass",
+    "url": "ws://localhost:8123/api/websocket",
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiIwOWQ2NDYxMzNhMzU0NmMwOWExNDYxOTEzYmUzMDU2ZCIsImlhdCI6MTY3NTE4MTg1NCwiZXhwIjoxOTkwNTQxODU0fQ.SSTRnVklTVgmH82-ndv1M01BpnCNZf23-m_eORL84Oo"
+  }
+]

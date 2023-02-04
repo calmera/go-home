@@ -1,9 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"github.com/calmera/go-home/core"
 	"github.com/calmera/go-home/hass"
-	"github.com/rs/zerolog/log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -12,14 +12,22 @@ import (
 func main() {
 	cfg := core.NodeConfig{
 		StorageDir: "data",
+		ConfigDir:  "config",
+	}
+
+	hassModules, err := hass.LoadHassConfig(fmt.Sprintf("%s/hass.json", cfg.ConfigDir))
+	if err != nil {
+		panic(err)
 	}
 
 	n, err := core.NewNode(cfg)
 	if err != nil {
-		log.Err(err)
+		panic(err)
 	}
 
-	n.RegisterModule(&hass.HassModule{})
+	for _, hm := range hassModules {
+		n.RegisterModule(hm)
+	}
 
 	c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
@@ -30,7 +38,7 @@ func main() {
 	}(n)
 
 	if err := n.Start(); err != nil {
-		log.Err(err)
+		panic(err)
 	}
 
 	n.Wait()
