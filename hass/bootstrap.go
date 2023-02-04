@@ -84,14 +84,14 @@ func (m *Module) bootstrapEntities() error {
 	}
 
 	err = m.hass.GetStates(func(states map[string]go_hass_ws.State) {
-		for eid, entity := range states {
+		for _, entity := range states {
 			b, err := json.Marshal(entity)
 			if err != nil {
 				log.Err(fmt.Errorf("unable to encode hass state to json: %w", err))
 			}
 
-			if _, err := kv.Create(eid, b); err != nil {
-				log.Err(fmt.Errorf("unable to store hass entity %s to json: %w", eid, err))
+			if _, err := kv.Create(entity.EntityId, b); err != nil {
+				log.Err(fmt.Errorf("unable to store hass entity %s to json: %w", entity.EntityId, err))
 			}
 		}
 	})
